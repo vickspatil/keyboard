@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>Musical Keyboard Visualizer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0a0a0f;
+      overflow: hidden;
+      font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+    }
+
+    #canvas {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    #start-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 10, 15, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      cursor: pointer;
+    }
+
+    #start-overlay h1 {
+      color: #e0e0ff;
+      font-size: 2.5rem;
+      font-weight: 300;
+      letter-spacing: 0.3em;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+    }
+
+    #start-overlay p {
+      color: #6a6a8a;
+      font-size: 1rem;
+      letter-spacing: 0.1em;
+    }
+
+    #start-overlay .pulse {
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* PIANO KEYBOARD UI                                                */
+    /* ═══════════════════════════════════════════════════════════════ */
+    #keyboard-ui {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .piano-container {
+      display: flex;
+      gap: 0;
+      background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+      padding: 10px 15px 15px 15px;
+      border-radius: 10px;
+      border: 1px solid #2a2a4a;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .octave {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .octave-label {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #3a3a5a;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+    }
+
+    .white-keys {
+      display: flex;
+      gap: 2px;
+    }
+
+    .black-keys {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 60%;
+      pointer-events: none;
+    }
+
+    /* White Keys */
+    .key.white {
+      width: 44px;
+      height: 130px;
+      background: linear-gradient(180deg, #f8f8ff 0%, #e8e8f0 50%, #d8d8e8 100%);
+      border: 1px solid #b0b0c0;
+      border-radius: 0 0 6px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.06s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), inset 0 -2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .key.white:hover {
+      background: linear-gradient(180deg, #ffffff 0%, #f0f0f8 50%, #e0e0f0 100%);
+    }
+
+    .key.white.active {
+      background: linear-gradient(180deg, #c8b8ff 0%, #a898e8 50%, #9080d8 100%);
+      border-color: #7060c0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(120, 80, 200, 0.3);
+      transform: translateY(2px);
+    }
+
+    .key.white .key-label {
+      color: #6a6a8a;
+      font-size: 0.65rem;
+      font-weight: 600;
+    }
+
+    .key.white.active .key-label {
+      color: #4030a0;
+    }
+
+    .key.white .note-label {
+      color: #9090a0;
+      font-size: 0.55rem;
+      margin-bottom: 4px;
+    }
+
+    .key.white.active .note-label {
+      color: #5040b0;
+    }
+
+    /* Black Keys */
+    .key.black {
+      position: absolute;
+      width: 28px;
+      height: 80px;
+      background: linear-gradient(180deg, #2a2a3a 0%, #1a1a28 50%, #0a0a14 100%);
+      border: 1px solid #3a3a4a;
+      border-radius: 0 0 4px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 6px;
+      z-index: 10;
+      cursor: pointer;
+      transition: all 0.06s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+      transform: translateX(-50%);
+    }
+
+    .key.black:hover {
+      background: linear-gradient(180deg, #3a3a4a 0%, #2a2a38 50%, #1a1a24 100%);
+    }
+
+    .key.black.active {
+      background: linear-gradient(180deg, #6050a0 0%, #4a3a88 50%, #3a2a70 100%);
+      border-color: #8070c0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(150, 100, 255, 0.3);
+      transform: translateX(-50%) translateY(2px);
+    }
+
+    .key.black .key-label {
+      color: #6a6a7a;
+      font-size: 0.55rem;
+      font-weight: 500;
+    }
+
+    .key.black.active .key-label {
+      color: #c0b0ff;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* INSTRUCTIONS                                                     */
+    /* ═══════════════════════════════════════════════════════════════ */
+    #instructions {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #4a4a6a;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      z-index: 10;
+      text-align: center;
+      line-height: 1.8;
+      background: rgba(15, 15, 25, 0.8);
+      padding: 12px 20px;
+      border-radius: 8px;
+      border: 1px solid #2a2a4a;
+    }
+
+    #instructions .row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 4px 0;
+    }
+
+    #instructions .octave-name {
+      color: #6a6a8a;
+      min-width: 35px;
+      text-align: right;
+    }
+
+    #instructions .keys {
+      color: #8080a0;
+      font-weight: 500;
+    }
+
+    #instructions .black-keys-row {
+      color: #5a5a7a;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* SETTINGS PANEL                                                   */
+    /* ═══════════════════════════════════════════════════════════════ */
+    #settings-panel {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 20;
+    }
+
+    .settings-toggle {
+      width: 40px;
+      height: 40px;
+      background: rgba(30, 30, 50, 0.8);
+      border: 1px solid #3a3a5a;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: #6a6a8a;
+      transition: all 0.2s ease;
+      pointer-events: auto;
+    }
+
+    .settings-toggle:hover {
+      background: rgba(50, 50, 80, 0.9);
+      color: #a0a0c0;
+    }
+
+    .settings-toggle.open {
+      background: rgba(60, 40, 100, 0.9);
+      border-color: #5a4a8a;
+      color: #b0a0e0;
+    }
+
+    .settings-content {
+      position: absolute;
+      top: 50px;
+      right: 0;
+      width: 260px;
+      background: rgba(20, 20, 35, 0.95);
+      border: 1px solid #3a3a5a;
+      border-radius: 10px;
+      padding: 16px;
+      display: none;
+      pointer-events: auto;
+    }
+
+    .settings-content.open {
+      display: block;
+    }
+
+    .settings-content h3 {
+      color: #8080a0;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .setting-row label {
+      color: #6a6a8a;
+      font-size: 0.75rem;
+    }
+
+    .setting-row input[type="range"] {
+      width: 100%;
+      height: 4px;
+      background: #2a2a4a;
+      border-radius: 2px;
+      appearance: none;
+      cursor: pointer;
+    }
+
+    .setting-row input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      background: #6a5a9a;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .setting-row input[type="range"]:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .setting-value {
+      color: #5a5a7a;
+      font-size: 0.7rem;
+      min-width: 50px;
+      text-align: right;
+    }
+
+    /* Toggle Switch */
+    .switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .switch .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #2a2a4a;
+      border-radius: 24px;
+      transition: 0.3s;
+    }
+
+    .switch .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background: #5a5a7a;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+
+    .switch input:checked + .slider {
+      background: #4a3a7a;
+    }
+
+    .switch input:checked + .slider:before {
+      transform: translateX(20px);
+      background: #b0a0e0;
+    }
+
+    /* Middle C indicator */
+    .key.white[id="key-i"]::after {
+      content: '●';
+      position: absolute;
+      top: 8px;
+      font-size: 0.5rem;
+      color: #7060c0;
+    }
+  </style>
+</head>
+<body>
+  <div id="start-overlay">
+    <h1>Synth</h1>
+    <p class="pulse">Click anywhere to begin</p>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div id="instructions">
+    <div class="row">
+      <span class="octave-name">C4:</span>
+      <span class="keys">I O P [ ] \ A K</span>
+      <span class="black-keys-row">(9 0 - = ⌫)</span>
+    </div>
+    <div class="row">
+      <span class="octave-name">C3:</span>
+      <span class="keys">Q W E R T Y U</span>
+      <span class="black-keys-row">(2 3 5 6 7)</span>
+    </div>
+    <div class="row">
+      <span class="octave-name">C2:</span>
+      <span class="keys">Z X C V B N M</span>
+      <span class="black-keys-row">(S D G H J)</span>
+    </div>
+  </div>
+
+  <div id="settings-panel"></div>
+
+  <div id="keyboard-ui"></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
