@@ -1,23 +1,31 @@
 /**
  * Note mapping configuration
- * Standard Virtual Piano Layout - 3 Octaves (C2 to C5)
+ * Standard Virtual Piano Layout - 4 Octaves (C2 to C6) with Octave Shift
  * 
  * Layout mirrors a real piano:
  * - Bottom rows = lower octave
  * - Top rows = higher octave
  * - Row above white keys = black keys (sharps)
  * 
- * OCTAVE 3 (C4-C5):  9  0     -  =        ← Black keys
- *                    I  O  P  [  ]  \     ← White keys
+ * OCTAVE 4 (C5-C6):  F1 F2    F4 F5 F6    ← Black keys (function row)
+ *                    L  ;  '  ,  .  /  `  ← White keys
+ * 
+ * OCTAVE 3 (C4-C5):  9  0     -  =  ⌫     ← Black keys
+ *                    I  O  P  [  ]  \  A K← White keys
  * 
  * OCTAVE 2 (C3-B3):  2  3     5  6  7     ← Black keys
  *                    Q  W  E  R  T  Y  U  ← White keys
  * 
  * OCTAVE 1 (C2-B2):  S  D     G  H  J     ← Black keys
  *                    Z  X  C  V  B  N  M  ← White keys
+ * 
+ * With octave shift: Access full piano range A0-C8
  */
 
-// Complete key-to-note mapping for 3 octaves
+// Octave offset state (can be adjusted via UI)
+let currentOctaveOffset = 0;
+
+// Complete key-to-note mapping for 4 octaves
 export const KEY_TO_NOTE = {
   // ═══════════════════════════════════════════════════════════════
   // OCTAVE 1 (C2 - B2) - Bottom rows (Z-M and S-J)
@@ -56,7 +64,7 @@ export const KEY_TO_NOTE = {
   '7': { note: 'A#', midi: 58, isBlack: true, octave: 3 },
 
   // ═══════════════════════════════════════════════════════════════
-  // OCTAVE 3 (C4 - C5) - Upper rows (I-\ and 9-=)
+  // OCTAVE 3 (C4 - B4) - Upper rows (I-A and 9-Backspace)
   // ═══════════════════════════════════════════════════════════════
   // White keys (continuing top letter row + brackets)
   'i': { note: 'C',  midi: 60, isBlack: false, octave: 4 },  // Middle C
@@ -66,13 +74,31 @@ export const KEY_TO_NOTE = {
   ']': { note: 'G',  midi: 67, isBlack: false, octave: 4 },
   '\\': { note: 'A', midi: 69, isBlack: false, octave: 4 }, // A440
   'a': { note: 'B',  midi: 71, isBlack: false, octave: 4 },
-  'k': { note: 'C',  midi: 72, isBlack: false, octave: 5 },  // High C
   // Black keys (number row continuation)
   '9': { note: 'C#', midi: 61, isBlack: true, octave: 4 },
   '0': { note: 'D#', midi: 63, isBlack: true, octave: 4 },
   '-': { note: 'F#', midi: 66, isBlack: true, octave: 4 },
   '=': { note: 'G#', midi: 68, isBlack: true, octave: 4 },
   'Backspace': { note: 'A#', midi: 70, isBlack: true, octave: 4 },
+
+  // ═══════════════════════════════════════════════════════════════
+  // OCTAVE 4 (C5 - C6) - Extended octave (L-` and F1-F6)
+  // ═══════════════════════════════════════════════════════════════
+  // White keys (home row continuation + punctuation)
+  'k': { note: 'C',  midi: 72, isBlack: false, octave: 5 },
+  'l': { note: 'D',  midi: 74, isBlack: false, octave: 5 },
+  ';': { note: 'E',  midi: 76, isBlack: false, octave: 5 },
+  "'": { note: 'F',  midi: 77, isBlack: false, octave: 5 },
+  ',': { note: 'G',  midi: 79, isBlack: false, octave: 5 },
+  '.': { note: 'A',  midi: 81, isBlack: false, octave: 5 },
+  '/': { note: 'B',  midi: 83, isBlack: false, octave: 5 },
+  '`': { note: 'C',  midi: 84, isBlack: false, octave: 6 },  // High C6
+  // Black keys (function keys)
+  'F1': { note: 'C#', midi: 73, isBlack: true, octave: 5 },
+  'F2': { note: 'D#', midi: 75, isBlack: true, octave: 5 },
+  'F4': { note: 'F#', midi: 78, isBlack: true, octave: 5 },
+  'F5': { note: 'G#', midi: 80, isBlack: true, octave: 5 },
+  'F6': { note: 'A#', midi: 82, isBlack: true, octave: 5 },
 };
 
 // Layout arrays for UI rendering - each octave as a visual group
@@ -119,14 +145,30 @@ export const OCTAVE_3_LAYOUT = [
   { key: '\\', isBlack: false, position: 5 },  // A4 (440 Hz)
   { key: 'Backspace', isBlack: true, position: 5.5 }, // A#4
   { key: 'a', isBlack: false, position: 6 },   // B4
-  { key: 'k', isBlack: false, position: 7 },   // C5 (High C)
+];
+
+export const OCTAVE_4_LAYOUT = [
+  { key: 'k', isBlack: false, position: 0 },   // C5
+  { key: 'F1', isBlack: true, position: 0.5 }, // C#5
+  { key: 'l', isBlack: false, position: 1 },   // D5
+  { key: 'F2', isBlack: true, position: 1.5 }, // D#5
+  { key: ';', isBlack: false, position: 2 },   // E5
+  { key: "'", isBlack: false, position: 3 },   // F5
+  { key: 'F4', isBlack: true, position: 3.5 }, // F#5
+  { key: ',', isBlack: false, position: 4 },   // G5
+  { key: 'F5', isBlack: true, position: 4.5 }, // G#5
+  { key: '.', isBlack: false, position: 5 },   // A5
+  { key: 'F6', isBlack: true, position: 5.5 }, // A#5
+  { key: '/', isBlack: false, position: 6 },   // B5
+  { key: '`', isBlack: false, position: 7 },   // C6
 ];
 
 // All octave layouts combined
 export const ALL_OCTAVES = [
-  { name: 'C2', layout: OCTAVE_1_LAYOUT },
-  { name: 'C3', layout: OCTAVE_2_LAYOUT },
-  { name: 'C4', layout: OCTAVE_3_LAYOUT },
+  { name: 'C2', label: 'Oct 1', layout: OCTAVE_1_LAYOUT, baseOctave: 2 },
+  { name: 'C3', label: 'Oct 2', layout: OCTAVE_2_LAYOUT, baseOctave: 3 },
+  { name: 'C4', label: 'Oct 3', layout: OCTAVE_3_LAYOUT, baseOctave: 4 },
+  { name: 'C5', label: 'Oct 4', layout: OCTAVE_4_LAYOUT, baseOctave: 5 },
 ];
 
 // Flat list of all keys
@@ -134,10 +176,72 @@ export const KEY_ORDER = [
   ...OCTAVE_1_LAYOUT.map(k => k.key),
   ...OCTAVE_2_LAYOUT.map(k => k.key),
   ...OCTAVE_3_LAYOUT.map(k => k.key),
+  ...OCTAVE_4_LAYOUT.map(k => k.key),
 ];
 
 export const WHITE_KEYS = KEY_ORDER.filter(k => !KEY_TO_NOTE[k]?.isBlack);
 export const BLACK_KEYS = KEY_ORDER.filter(k => KEY_TO_NOTE[k]?.isBlack);
+
+// ═══════════════════════════════════════════════════════════════
+// OCTAVE OFFSET MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+
+const MIN_OCTAVE_OFFSET = -2;  // Can go down to A0 range
+const MAX_OCTAVE_OFFSET = 2;   // Can go up to C8 range
+
+/**
+ * Get current octave offset
+ * @returns {number}
+ */
+export function getOctaveOffset() {
+  return currentOctaveOffset;
+}
+
+/**
+ * Set octave offset
+ * @param {number} offset - Octave offset (-2 to +2)
+ * @returns {number} The actual offset set (clamped to valid range)
+ */
+export function setOctaveOffset(offset) {
+  currentOctaveOffset = Math.max(MIN_OCTAVE_OFFSET, Math.min(MAX_OCTAVE_OFFSET, offset));
+  return currentOctaveOffset;
+}
+
+/**
+ * Shift octave up by 1
+ * @returns {number} New offset
+ */
+export function octaveUp() {
+  return setOctaveOffset(currentOctaveOffset + 1);
+}
+
+/**
+ * Shift octave down by 1
+ * @returns {number} New offset
+ */
+export function octaveDown() {
+  return setOctaveOffset(currentOctaveOffset - 1);
+}
+
+/**
+ * Reset octave offset to 0
+ * @returns {number}
+ */
+export function resetOctave() {
+  return setOctaveOffset(0);
+}
+
+/**
+ * Get the octave offset range limits
+ * @returns {{min: number, max: number}}
+ */
+export function getOctaveOffsetRange() {
+  return { min: MIN_OCTAVE_OFFSET, max: MAX_OCTAVE_OFFSET };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FREQUENCY CALCULATIONS
+// ═══════════════════════════════════════════════════════════════
 
 /**
  * Calculate frequency from MIDI note number
@@ -146,14 +250,16 @@ export const BLACK_KEYS = KEY_ORDER.filter(k => KEY_TO_NOTE[k]?.isBlack);
  * A4 = MIDI 69 = 440 Hz
  * 
  * @param {number} midiNote - MIDI note number
+ * @param {number} octaveOffset - Optional octave offset (default: current offset)
  * @returns {number} Frequency in Hz
  */
-export function midiToFrequency(midiNote) {
-  return 440 * Math.pow(2, (midiNote - 69) / 12);
+export function midiToFrequency(midiNote, octaveOffset = currentOctaveOffset) {
+  const adjustedMidi = midiNote + (octaveOffset * 12);
+  return 440 * Math.pow(2, (adjustedMidi - 69) / 12);
 }
 
 /**
- * Get note data for a keyboard key
+ * Get note data for a keyboard key (with octave offset applied)
  * @param {string} key - Keyboard key
  * @returns {object|null} Note data or null if not mapped
  */
@@ -163,9 +269,14 @@ export function getNoteForKey(key) {
   const noteData = KEY_TO_NOTE[normalizedKey];
   if (!noteData) return null;
   
+  const adjustedOctave = noteData.octave + currentOctaveOffset;
+  const adjustedMidi = noteData.midi + (currentOctaveOffset * 12);
+  
   return {
     ...noteData,
     frequency: midiToFrequency(noteData.midi),
+    adjustedOctave,
+    adjustedMidi,
     key: normalizedKey
   };
 }
@@ -190,5 +301,18 @@ export function getKeyLabel(key) {
   if (key === '\\') return '\\';
   if (key === '[') return '[';
   if (key === ']') return ']';
+  if (key === "'") return "'";
+  if (key === '`') return '`';
+  if (key.startsWith('F') && key.length <= 3) return key; // F1-F12
   return key.toUpperCase();
+}
+
+/**
+ * Get note name with octave (e.g., "C4", "F#5")
+ * @param {object} noteData 
+ * @returns {string}
+ */
+export function getNoteDisplayName(noteData) {
+  const octave = noteData.octave + currentOctaveOffset;
+  return `${noteData.note}${octave}`;
 }

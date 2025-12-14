@@ -66,11 +66,108 @@
     }
 
     /* ═══════════════════════════════════════════════════════════════ */
+    /* OCTAVE CONTROLS                                                  */
+    /* ═══════════════════════════════════════════════════════════════ */
+    #octave-controls {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(20, 20, 35, 0.9);
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid #3a3a5a;
+    }
+
+    .octave-btn {
+      width: 32px;
+      height: 32px;
+      background: rgba(40, 40, 70, 0.8);
+      border: 1px solid #4a4a6a;
+      border-radius: 6px;
+      color: #a0a0c0;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .octave-btn:hover:not(:disabled) {
+      background: rgba(70, 50, 120, 0.9);
+      border-color: #6a5a9a;
+      color: #c0b0ff;
+    }
+
+    .octave-btn:active:not(:disabled) {
+      transform: scale(0.95);
+    }
+
+    .octave-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .octave-display {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 70px;
+      padding: 0 8px;
+    }
+
+    .octave-offset {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #8080a0;
+    }
+
+    .octave-offset.positive {
+      color: #60c080;
+    }
+
+    .octave-offset.negative {
+      color: #c06080;
+    }
+
+    .octave-offset.neutral {
+      color: #8080a0;
+    }
+
+    .octave-range {
+      font-size: 0.6rem;
+      color: #5a5a7a;
+      letter-spacing: 0.05em;
+    }
+
+    .octave-reset {
+      width: 28px;
+      height: 28px;
+      background: rgba(40, 40, 70, 0.6);
+      border: 1px solid #3a3a5a;
+      border-radius: 4px;
+      color: #6a6a8a;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-left: 4px;
+    }
+
+    .octave-reset:hover {
+      background: rgba(60, 40, 100, 0.8);
+      color: #a090d0;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════ */
     /* PIANO KEYBOARD UI                                                */
     /* ═══════════════════════════════════════════════════════════════ */
     #keyboard-ui {
       position: fixed;
-      bottom: 20px;
+      bottom: 15px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 10;
@@ -81,7 +178,7 @@
       display: flex;
       gap: 0;
       background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
-      padding: 10px 15px 15px 15px;
+      padding: 8px 12px 12px 12px;
       border-radius: 10px;
       border: 1px solid #2a2a4a;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
@@ -95,42 +192,43 @@
 
     .octave-label {
       position: absolute;
-      bottom: -20px;
+      bottom: -18px;
       left: 50%;
       transform: translateX(-50%);
-      color: #3a3a5a;
-      font-size: 0.6rem;
+      color: #4a4a6a;
+      font-size: 0.55rem;
       letter-spacing: 0.1em;
+      transition: color 0.2s ease;
     }
 
     .white-keys {
       display: flex;
-      gap: 2px;
+      gap: 1px;
     }
 
     .black-keys {
       position: absolute;
       top: 0;
       left: 0;
-      height: 60%;
+      height: 58%;
       pointer-events: none;
     }
 
-    /* White Keys */
+    /* White Keys - slightly smaller for 4 octaves */
     .key.white {
-      width: 44px;
-      height: 130px;
+      width: 36px;
+      height: 105px;
       background: linear-gradient(180deg, #f8f8ff 0%, #e8e8f0 50%, #d8d8e8 100%);
       border: 1px solid #b0b0c0;
-      border-radius: 0 0 6px 6px;
+      border-radius: 0 0 5px 5px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-end;
-      padding-bottom: 8px;
+      padding-bottom: 6px;
       cursor: pointer;
-      transition: all 0.06s ease;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), inset 0 -2px 4px rgba(0, 0, 0, 0.05);
+      transition: all 0.05s ease;
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2), inset 0 -2px 3px rgba(0, 0, 0, 0.05);
     }
 
     .key.white:hover {
@@ -140,13 +238,13 @@
     .key.white.active {
       background: linear-gradient(180deg, #c8b8ff 0%, #a898e8 50%, #9080d8 100%);
       border-color: #7060c0;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(120, 80, 200, 0.3);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), inset 0 0 15px rgba(120, 80, 200, 0.3);
       transform: translateY(2px);
     }
 
     .key.white .key-label {
-      color: #6a6a8a;
-      font-size: 0.65rem;
+      color: #7a7a9a;
+      font-size: 0.55rem;
       font-weight: 600;
     }
 
@@ -156,31 +254,31 @@
 
     .key.white .note-label {
       color: #9090a0;
-      font-size: 0.55rem;
-      margin-bottom: 4px;
+      font-size: 0.45rem;
+      margin-bottom: 3px;
     }
 
     .key.white.active .note-label {
       color: #5040b0;
     }
 
-    /* Black Keys */
+    /* Black Keys - slightly smaller */
     .key.black {
       position: absolute;
-      width: 28px;
-      height: 80px;
+      width: 24px;
+      height: 62px;
       background: linear-gradient(180deg, #2a2a3a 0%, #1a1a28 50%, #0a0a14 100%);
       border: 1px solid #3a3a4a;
-      border-radius: 0 0 4px 4px;
+      border-radius: 0 0 3px 3px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-end;
-      padding-bottom: 6px;
+      padding-bottom: 5px;
       z-index: 10;
       cursor: pointer;
-      transition: all 0.06s ease;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+      transition: all 0.05s ease;
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.2);
       transform: translateX(-50%);
     }
 
@@ -191,18 +289,23 @@
     .key.black.active {
       background: linear-gradient(180deg, #6050a0 0%, #4a3a88 50%, #3a2a70 100%);
       border-color: #8070c0;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(150, 100, 255, 0.3);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(150, 100, 255, 0.3);
       transform: translateX(-50%) translateY(2px);
     }
 
     .key.black .key-label {
       color: #6a6a7a;
-      font-size: 0.55rem;
+      font-size: 0.45rem;
       font-weight: 500;
     }
 
     .key.black.active .key-label {
       color: #c0b0ff;
+    }
+
+    /* Black key positioning for smaller keys (36px white key width + 1px gap) */
+    .octave .black-keys .key.black {
+      left: auto;
     }
 
     /* ═══════════════════════════════════════════════════════════════ */
@@ -214,13 +317,13 @@
       left: 50%;
       transform: translateX(-50%);
       color: #4a4a6a;
-      font-size: 0.7rem;
-      letter-spacing: 0.08em;
+      font-size: 0.65rem;
+      letter-spacing: 0.06em;
       z-index: 10;
       text-align: center;
-      line-height: 1.8;
-      background: rgba(15, 15, 25, 0.8);
-      padding: 12px 20px;
+      line-height: 1.6;
+      background: rgba(15, 15, 25, 0.85);
+      padding: 10px 16px;
       border-radius: 8px;
       border: 1px solid #2a2a4a;
     }
@@ -228,13 +331,13 @@
     #instructions .row {
       display: flex;
       justify-content: center;
-      gap: 8px;
-      margin: 4px 0;
+      gap: 6px;
+      margin: 3px 0;
     }
 
     #instructions .octave-name {
       color: #6a6a8a;
-      min-width: 35px;
+      min-width: 28px;
       text-align: right;
     }
 
@@ -244,6 +347,14 @@
     }
 
     #instructions .black-keys-row {
+      color: #5a5a7a;
+      font-size: 0.6rem;
+    }
+
+    #instructions .hint {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid #2a2a4a;
       color: #5a5a7a;
     }
 
@@ -404,8 +515,8 @@
     .key.white[id="key-i"]::after {
       content: '●';
       position: absolute;
-      top: 8px;
-      font-size: 0.5rem;
+      top: 6px;
+      font-size: 0.4rem;
       color: #7060c0;
     }
   </style>
@@ -420,8 +531,13 @@
 
   <div id="instructions">
     <div class="row">
+      <span class="octave-name">C5:</span>
+      <span class="keys">K L ; ' , . / `</span>
+      <span class="black-keys-row">(F1 F2 F4 F5 F6)</span>
+    </div>
+    <div class="row">
       <span class="octave-name">C4:</span>
-      <span class="keys">I O P [ ] \ A K</span>
+      <span class="keys">I O P [ ] \ A</span>
       <span class="black-keys-row">(9 0 - = ⌫)</span>
     </div>
     <div class="row">
@@ -434,7 +550,10 @@
       <span class="keys">Z X C V B N M</span>
       <span class="black-keys-row">(S D G H J)</span>
     </div>
+    <div class="hint">↑↓ Arrows or PgUp/PgDn to shift octaves</div>
   </div>
+
+  <div id="octave-controls"></div>
 
   <div id="settings-panel"></div>
 

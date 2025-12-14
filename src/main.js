@@ -6,13 +6,24 @@
 import { resumeAudioContext, isAudioReady } from './audio/audioEngine.js';
 import { initKeyboard, isKeyPressed } from './input/keyboard.js';
 import { initVisualEngine, startRenderLoop, visualSettings, updateVisualSettings } from './visuals/visualEngine.js';
-import { KEY_TO_NOTE, ALL_OCTAVES, getKeyLabel } from './audio/noteMap.js';
+import { 
+  KEY_TO_NOTE, 
+  ALL_OCTAVES, 
+  getKeyLabel, 
+  getOctaveOffset, 
+  setOctaveOffset,
+  octaveUp, 
+  octaveDown, 
+  resetOctave,
+  getOctaveOffsetRange 
+} from './audio/noteMap.js';
 
 // DOM Elements
 const startOverlay = document.getElementById('start-overlay');
 const canvas = document.getElementById('canvas');
 const keyboardUI = document.getElementById('keyboard-ui');
 const settingsPanel = document.getElementById('settings-panel');
+const octaveControls = document.getElementById('octave-controls');
 
 // App state
 let isInitialized = false;
@@ -39,8 +50,14 @@ async function init() {
     // Build keyboard UI
     buildKeyboardUI();
     
+    // Build octave controls
+    buildOctaveControls();
+    
     // Build settings UI
     buildSettingsUI();
+    
+    // Add keyboard shortcuts for octave shifting
+    setupOctaveKeyboardShortcuts();
     
     // Start render loop
     startRenderLoop();
@@ -50,14 +67,14 @@ async function init() {
     
     isInitialized = true;
     
-    console.log('🎹 Musical Keyboard Visualizer initialized - 3 octaves ready!');
+    console.log('🎹 Musical Keyboard Visualizer initialized - 4 octaves with pitch shift ready!');
   } catch (error) {
     console.error('Failed to initialize:', error);
   }
 }
 
 /**
- * Build the on-screen keyboard UI with 3 octaves in piano layout
+ * Build the on-screen keyboard UI with 4 octaves in piano layout
  */
 function buildKeyboardUI() {
   keyboardUI.innerHTML = '';
@@ -65,16 +82,19 @@ function buildKeyboardUI() {
   // Create a piano-style layout with all octaves in a row
   const pianoContainer = document.createElement('div');
   pianoContainer.className = 'piano-container';
+  pianoContainer.id = 'piano-container';
   
   // Build each octave
   ALL_OCTAVES.forEach((octaveData, octaveIndex) => {
     const octaveDiv = document.createElement('div');
     octaveDiv.className = 'octave';
     octaveDiv.dataset.octave = octaveData.name;
+    octaveDiv.dataset.baseOctave = octaveData.baseOctave;
     
-    // Add octave label
+    // Add octave label (will be updated when offset changes)
     const label = document.createElement('span');
     label.className = 'octave-label';
+    label.id = `octave-label-${octaveIndex}`;
     label.textContent = octaveData.name;
     octaveDiv.appendChild(label);
     
@@ -95,9 +115,11 @@ function buildKeyboardUI() {
       const noteData = KEY_TO_NOTE[keyData.key];
       const keyElement = document.createElement('div');
       keyElement.className = 'key white';
-      keyElement.id = `key-${keyData.key === '\\' ? 'backslash' : keyData.key}`;
+      keyElement.id = `key-${normalizeKeyId(keyData.key)}`;
+      keyElement.dataset.baseNote = noteData.note;
+      keyElement.dataset.baseOctave = noteData.octave;
       keyElement.innerHTML = `
-        <span class="note-label">${noteData.note}${noteData.octave}</span>
+        <span class="note-label" data-note="${noteData.note}" data-octave="${noteData.octave}">${noteData.note}${noteData.octave}</span>
         <span class="key-label">${getKeyLabel(keyData.key)}</span>
       `;
       whiteKeysDiv.appendChild(keyElement);
@@ -108,9 +130,9 @@ function buildKeyboardUI() {
       const noteData = KEY_TO_NOTE[keyData.key];
       const keyElement = document.createElement('div');
       keyElement.className = 'key black';
-      keyElement.id = `key-${keyData.key === 'Backspace' ? 'backspace' : keyData.key}`;
-      // Position based on which white key it's after
-      keyElement.style.left = `${(keyData.position) * 44 + 30}px`;
+      keyElement.id = `key-${normalizeKeyId(keyData.key)}`;
+      // Position based on which white key it's after (36px white key + 1px gap = 37px)
+      keyElement.style.left = `${(keyData.position) * 37 + 24}px`;
       keyElement.innerHTML = `
         <span class="key-label">${getKeyLabel(keyData.key)}</span>
       `;
@@ -123,6 +145,153 @@ function buildKeyboardUI() {
   });
   
   keyboardUI.appendChild(pianoContainer);
+}
+
+/**
+ * Normalize key ID for use in DOM element IDs
+ */
+function normalizeKeyId(key) {
+  if (key === '\\') return 'backslash';
+  if (key === 'Backspace') return 'backspace';
+  if (key === "'") return 'quote';
+  if (key === ';') return 'semicolon';
+  if (key === '`') return 'backtick';
+  if (key === ',') return 'comma';
+  if (key === '.') return 'period';
+  if (key === '/') return 'slash';
+  if (key === '[') return 'lbracket';
+  if (key === ']') return 'rbracket';
+  return key;
+}
+
+/**
+ * Build octave shift controls
+ */
+function buildOctaveControls() {
+  const range = getOctaveOffsetRange();
+  const offset = getOctaveOffset();
+  
+  octaveControls.innerHTML = `
+    <button class="octave-btn" id="octave-down" title="Shift Down (Arrow Down)">▼</button>
+    <div class="octave-display">
+      <span class="octave-offset" id="octave-offset">${offset >= 0 ? '+' : ''}${offset}</span>
+      <span class="octave-range" id="octave-range">C${2 + offset} - C${6 + offset}</span>
+    </div>
+    <button class="octave-btn" id="octave-up" title="Shift Up (Arrow Up)">▲</button>
+    <button class="octave-reset" id="octave-reset" title="Reset (Home)">⌂</button>
+  `;
+  
+  // Octave down button
+  document.getElementById('octave-down').addEventListener('click', () => {
+    handleOctaveChange(octaveDown());
+  });
+  
+  // Octave up button
+  document.getElementById('octave-up').addEventListener('click', () => {
+    handleOctaveChange(octaveUp());
+  });
+  
+  // Reset button
+  document.getElementById('octave-reset').addEventListener('click', () => {
+    handleOctaveChange(resetOctave());
+  });
+  
+  updateOctaveDisplay();
+}
+
+/**
+ * Setup keyboard shortcuts for octave shifting
+ */
+function setupOctaveKeyboardShortcuts() {
+  window.addEventListener('keydown', (event) => {
+    // Only handle octave shortcuts if initialized
+    if (!isInitialized) return;
+    
+    // Ignore if a note key or modifier
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    
+    switch (event.key) {
+      case 'ArrowUp':
+      case 'PageUp':
+        event.preventDefault();
+        handleOctaveChange(octaveUp());
+        break;
+      case 'ArrowDown':
+      case 'PageDown':
+        event.preventDefault();
+        handleOctaveChange(octaveDown());
+        break;
+      case 'Home':
+        event.preventDefault();
+        handleOctaveChange(resetOctave());
+        break;
+    }
+  });
+}
+
+/**
+ * Handle octave change - update UI
+ */
+function handleOctaveChange(newOffset) {
+  updateOctaveDisplay();
+  updateOctaveLabels();
+  updateButtonStates();
+}
+
+/**
+ * Update the octave display
+ */
+function updateOctaveDisplay() {
+  const offset = getOctaveOffset();
+  const offsetDisplay = document.getElementById('octave-offset');
+  const rangeDisplay = document.getElementById('octave-range');
+  
+  if (offsetDisplay) {
+    offsetDisplay.textContent = offset >= 0 ? `+${offset}` : `${offset}`;
+    offsetDisplay.className = `octave-offset ${offset > 0 ? 'positive' : offset < 0 ? 'negative' : 'neutral'}`;
+  }
+  
+  if (rangeDisplay) {
+    rangeDisplay.textContent = `C${2 + offset} - C${6 + offset}`;
+  }
+}
+
+/**
+ * Update octave labels on the keyboard
+ */
+function updateOctaveLabels() {
+  const offset = getOctaveOffset();
+  
+  // Update octave section labels
+  ALL_OCTAVES.forEach((octaveData, index) => {
+    const label = document.getElementById(`octave-label-${index}`);
+    if (label) {
+      const adjustedOctave = octaveData.baseOctave + offset;
+      label.textContent = `C${adjustedOctave}`;
+    }
+  });
+  
+  // Update note labels on white keys
+  document.querySelectorAll('.key.white .note-label').forEach(label => {
+    const baseNote = label.dataset.note;
+    const baseOctave = parseInt(label.dataset.octave);
+    const adjustedOctave = baseOctave + offset;
+    label.textContent = `${baseNote}${adjustedOctave}`;
+  });
+}
+
+/**
+ * Update button enabled/disabled states
+ */
+function updateButtonStates() {
+  const offset = getOctaveOffset();
+  const range = getOctaveOffsetRange();
+  
+  const upBtn = document.getElementById('octave-up');
+  const downBtn = document.getElementById('octave-down');
+  
+  if (upBtn) upBtn.disabled = offset >= range.max;
+  if (downBtn) downBtn.disabled = offset <= range.min;
 }
 
 /**
@@ -189,7 +358,7 @@ function buildSettingsUI() {
  * @param {object} noteData 
  */
 function handleNoteOn(key, noteData) {
-  const elementId = key === '\\' ? 'backslash' : (key === 'Backspace' ? 'backspace' : key);
+  const elementId = normalizeKeyId(key);
   const keyElement = document.getElementById(`key-${elementId}`);
   if (keyElement) {
     keyElement.classList.add('active');
@@ -202,7 +371,7 @@ function handleNoteOn(key, noteData) {
  * @param {object} noteData 
  */
 function handleNoteOff(key, noteData) {
-  const elementId = key === '\\' ? 'backslash' : (key === 'Backspace' ? 'backspace' : key);
+  const elementId = normalizeKeyId(key);
   const keyElement = document.getElementById(`key-${elementId}`);
   if (keyElement) {
     keyElement.classList.remove('active');
